@@ -1,0 +1,5 @@
+id,Name,Hours,StartDate,EndDate,Notes,CurrentlyStudying,Finished,HoursPerWeek
+1,test1,10,,,,False,False,2
+2,test2,10,,,,True,False,2
+3,test1,10,,,,False,False,2
+4,test1,10,,,,False,False,2
