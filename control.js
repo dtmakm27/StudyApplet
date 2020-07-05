@@ -129,51 +129,47 @@ function moduleInfoModal(id) {
     createModal(fill);
 }
 
+function genStacks() {
 
+    let wrapper1 = d3.select("body").append("div").attr("id", "wr1").
+        style("width", "100%").style("display", "table");
+    let wrapper2 = wrapper1.append("div").
+        style("display", "table-row");
+
+
+    todoStack = wrapper2.append("div").attr("id", "todoStack")
+        .style("width", "300px").style("display", "table-cell");
+    todoStack.append("h2").text("To Do:");
+
+
+
+    todoStack.append("button").text("Add New Module").on("click",
+        () => {
+            createModal(addModuleForm);
+        });
+
+
+    studystack = wrapper2.append("div").attr("id", "studyStack")
+        .style("display", "table-cell");
+    studystack.append("h2").text("Study Stack:");
+    hours = studystack.append("h3").attr("id", "hours").text("0/0 hours");
+
+
+    finishedstack = wrapper2.append("div").attr("id", "finished")
+        .style("display", "table-cell");
+    finishedstack.append("h2").text("Finished:");
+}
 
 function loadStatic() {
-
-    let genStacks = function () {
-
-        let wrapper1 = d3.select("body").append("div").attr("id", "wr1").
-            style("width", "100%").style("display", "table");
-        let wrapper2 = wrapper1.append("div").
-            style("display", "table-row");
-
-
-        todoStack = wrapper2.append("div").attr("id", "todoStack")
-            .style("width", "300px").style("display", "table-cell");
-        todoStack.append("h2").text("To Do:");
-
-
-
-        todoStack.append("button").text("Add New Module").on("click",
-            () => {
-                createModal(addModuleForm);
-            });
-
-
-        studystack = wrapper2.append("div").attr("id", "studyStack")
-            .style("display", "table-cell");
-        studystack.append("h2").text("Study Stack:");
-        hours = studystack.append("h3").attr("id", "hours").text("0/0 hours");
-
-
-        finishedstack = wrapper2.append("div").attr("id", "finished")
-            .style("display", "table-cell");
-        finishedstack.append("h2").text("Finished:");
-    };
 
     d3.select("body").append("h1").text("Study Stuff");
     d3.select("body").append("button").text("save")
         .on("click", saveCurrentData);
     d3.select("body").append("button").text("refresh")
         .on("click", function () {
-            location.reload()
+            reLoadModules();
         });
     genStacks();
-
-
 }
 
 //takes in callback function to fillin modal
@@ -196,12 +192,17 @@ function createModal(fill) {
 
 }
 
-
-
-function loadModule(module) {
-    moduleArray.push(module);
+function reLoadModules() {
+    d3.select("#wr1").remove();
+    genStacks();
+    moduleArray.forEach(module => {
+        renderModule(module);
+    });
     updateHours();
+}
 
+
+function renderModule(module) {
     if (module.Finished != "True") {
         stack = module.CurrentlyStudying == "True" ? studystack : todoStack;
         let modBox = stack.
@@ -225,6 +226,9 @@ function loadModule(module) {
             () => modifyModule(module.id));
         modBox.append("button").text("move stacks")
             .on("click", () => moveStacks(module.id));
+
+        modBox.append("button").text("move up")
+            .on("click", () => moveUp(module.id));
     } else {
 
         stack = finishedstack;
@@ -241,6 +245,13 @@ function loadModule(module) {
         modBox.append("button").text("modify").on("click",
             () => modifyModule(module.id));
     }
+}
+
+function loadModule(module) {
+    moduleArray.push(module);
+    updateHours();
+    renderModule(module);
+
 }
 
 function removeModule(id) {
@@ -263,6 +274,39 @@ function moveStacks(id) {
 
     module.CurrentlyStudying = rev;
     loadModule(module);
+}
+
+function moveUp(id) {
+    let module = moduleArray.filter((mod) =>
+        mod.id == id
+    )[0];
+
+    let todoStackArray = moduleArray.filter((mod) =>
+        mod.CurrentlyStudying != "True" && mod.Finished != "True"
+    );
+    let studyStackArray = moduleArray.filter((mod) =>
+        mod.CurrentlyStudying == "True" && mod.Finished != "True"
+    );
+    //swap within moduleArray
+    let swapIndex = moduleArray.indexOf(module);
+    let moduleIndexToSwapFromStack, newIndex;
+
+    if (module.CurrentlyStudying == "True" && studyStackArray.indexOf(module) > 0) {
+        moduleIndexToSwapFromStack = studyStackArray.indexOf(module) - 1;
+        newIndex = moduleArray.indexOf(studyStackArray[moduleIndexToSwapFromStack]);
+
+        moduleArray[swapIndex] = studyStackArray[moduleIndexToSwapFromStack];
+        moduleArray[newIndex] = module;
+
+    } else if (module.CurrentlyStudying == "False" && todoStackArray.indexOf(module) > 0) {
+        moduleIndexToSwapFromStack = todoStackArray.indexOf(module) - 1;
+        newIndex = moduleArray.indexOf(todoStackArray[moduleIndexToSwapFromStack]);
+
+        moduleArray[swapIndex] = todoStackArray[moduleIndexToSwapFromStack];
+        moduleArray[newIndex] = module;
+    }
+
+    reLoadModules();
 
 }
 
